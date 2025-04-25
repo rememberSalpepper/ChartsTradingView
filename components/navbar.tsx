@@ -8,14 +8,14 @@ import { Menu } from "lucide-react";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 
 interface NavbarProps {
-  activeTab: string;
-  onTabChange: (tab: string) => void;
+  activeTab: "dashboard" | "mercados";
+  onTabChange: (tab: "dashboard" | "mercados") => void;
 }
 
 export default function Navbar({ activeTab, onTabChange }: NavbarProps) {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
-  const handleTabClick = (tab: string) => {
+  const handleTabClick = (tab: "dashboard" | "mercados") => {
     onTabChange(tab);
     setIsMobileMenuOpen(false);
   };
@@ -41,7 +41,8 @@ export default function Navbar({ activeTab, onTabChange }: NavbarProps) {
         </div>
 
         <div className="flex flex-1 items-center justify-between">
-          <nav className="hidden md:flex items-center space-x-4 lg:space-x-6">
+          {/* Desktop nav */}
+          <nav className="hidden md:flex items-center space-x-6">
             <button
               onClick={() => handleTabClick("dashboard")}
               className={`text-sm font-medium transition-colors hover:text-white ${
@@ -58,24 +59,9 @@ export default function Navbar({ activeTab, onTabChange }: NavbarProps) {
             >
               Mercados
             </button>
-            <button
-              onClick={() => handleTabClick("analisis")}
-              className={`text-sm font-medium transition-colors hover:text-white ${
-                activeTab === "analisis" ? "text-white" : "text-white/70"
-              }`}
-            >
-              Análisis
-            </button>
-            <button
-              onClick={() => handleTabClick("configuracion")}
-              className={`text-sm font-medium transition-colors hover:text-white ${
-                activeTab === "configuracion" ? "text-white" : "text-white/70"
-              }`}
-            >
-              Configuración
-            </button>
           </nav>
 
+          {/* Mobile menu */}
           <div className="md:hidden">
             <Sheet
               open={isMobileMenuOpen}
@@ -95,27 +81,27 @@ export default function Navbar({ activeTab, onTabChange }: NavbarProps) {
                 side="left"
                 className="bg-gradient-to-b from-teal-900 to-blue-900 text-white border-teal-700"
               >
-                <div className="flex flex-col space-y-4 mt-8">
-                  {["dashboard", "mercados", "analisis", "configuracion"].map((tab) => (
-                    <button
-                      key={tab}
-                      onClick={() => handleTabClick(tab)}
-                      className={`text-left px-4 py-2 rounded-md ${
-                        activeTab === tab
-                          ? "bg-teal-800/50 text-white"
-                          : "text-white/70 hover:bg-teal-800/20"
-                      }`}
-                    >
-                      {
-                        {
-                          dashboard: "Dashboard",
-                          mercados: "Mercados",
-                          analisis: "Análisis",
-                          configuracion: "Configuración",
-                        }[tab]
-                      }
-                    </button>
-                  ))}
+                <div className="flex flex-col space-y-4 mt-8 px-4">
+                  <button
+                    onClick={() => handleTabClick("dashboard")}
+                    className={`text-left py-2 rounded-md ${
+                      activeTab === "dashboard"
+                        ? "bg-teal-800/50 text-white"
+                        : "text-white/70 hover:bg-teal-800/20"
+                    }`}
+                  >
+                    Dashboard
+                  </button>
+                  <button
+                    onClick={() => handleTabClick("mercados")}
+                    className={`text-left py-2 rounded-md ${
+                      activeTab === "mercados"
+                        ? "bg-teal-800/50 text-white"
+                        : "text-white/70 hover:bg-teal-800/20"
+                    }`}
+                  >
+                    Mercados
+                  </button>
                 </div>
               </SheetContent>
             </Sheet>
@@ -123,5 +109,5 @@ export default function Navbar({ activeTab, onTabChange }: NavbarProps) {
         </div>
       </div>
     </header>
-  );
+);
 }
