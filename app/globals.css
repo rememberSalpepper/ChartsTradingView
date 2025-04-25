@@ -1,0 +1,89 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --background: 0 0% 100%;
+  --foreground: 222.2 84% 4.9%;
+  --card: 0 0% 100%;
+  --card-foreground: 222.2 84% 4.9%;
+  --popover: 0 0% 100%;
+  --popover-foreground: 222.2 84% 4.9%;
+  --primary: 172 75% 40%;
+  --primary-foreground: 210 40% 98%;
+  --secondary: 196 80% 45%;
+  --secondary-foreground: 222.2 47.4% 11.2%;
+  --muted: 210 40% 96.1%;
+  --muted-foreground: 215.4 16.3% 46.9%;
+  --accent: 172 75% 40%;
+  --accent-foreground: 222.2 47.4% 11.2%;
+  --destructive: 0 84.2% 60.2%;
+  --destructive-foreground: 210 40% 98%;
+  --border: 172 70% 30%;
+  --input: 172 70% 30%;
+  --ring: 172 75% 40%;
+  --radius: 0.75rem;
+}
+
+.dark {
+  --background: 180 70% 5%;
+  --foreground: 210 40% 98%;
+  --card: 180 70% 5%;
+  --card-foreground: 210 40% 98%;
+  --popover: 180 70% 5%;
+  --popover-foreground: 210 40% 98%;
+  --primary: 172 75% 40%;
+  --primary-foreground: 222.2 47.4% 11.2%;
+  --secondary: 196 80% 45%;
+  --secondary-foreground: 210 40% 98%;
+  --muted: 180 50% 10%;
+  --muted-foreground: 215 20.2% 65.1%;
+  --accent: 172 75% 40%;
+  --accent-foreground: 210 40% 98%;
+  --destructive: 0 62.8% 30.6%;
+  --destructive-foreground: 210 40% 98%;
+  --border: 180 50% 15%;
+  --input: 180 50% 15%;
+  --ring: 172 75% 40%;
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+  body {
+    @apply bg-background text-foreground;
+  }
+}
+
+.text-gradient {
+  -webkit-background-clip: text;
+  background-clip: text;
+}
+
+/* Ensure the chart container takes full height */
+.react-grid-item {
+  display: flex;
+  flex-direction: column;
+}
+
+/* Custom scrollbar for the dashboard */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: rgba(0, 128, 128, 0.1);
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb {
+  background: linear-gradient(to bottom, #20c997, #0ea5e9);
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: linear-gradient(to bottom, #0d9488, #0284c7);
+}
+
