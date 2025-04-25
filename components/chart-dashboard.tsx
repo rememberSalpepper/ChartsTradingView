@@ -1,7 +1,7 @@
-// File: components/ChartDashboard.tsx
+// File: components/chart-dashboard.tsx
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useLayoutEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Plus, X } from "lucide-react";
@@ -27,9 +27,8 @@ import "react-grid-layout/css/styles.css";
 import "react-resizable/css/styles.css";
 
 const ResponsiveGridLayout = WidthProvider(GridLayout);
-
 const CHARTS_KEY = "charts";
-const LAYOUT_KEY = "charts-layout";
+const LAYOUT_KEY = "charts-layout"; // lo usaremos solo para persistir, nunca para inicializar
 
 interface ChartItem {
   id: string;
@@ -51,7 +50,7 @@ const indicatorMap: Record<string, string> = {
   VWAP: "VWAP@tv-basicstudies",
 };
 
-// Componente que inyecta el script de TradingView
+// Widget de TradingView, forzamos 100% ancho/alto
 const TradingViewWidget = ({
   symbol,
   interval,
@@ -75,6 +74,8 @@ const TradingViewWidget = ({
     const studies = indicators.map((i) => indicatorMap[i]).filter(Boolean);
     script.innerHTML = JSON.stringify({
       autosize: true,
+      width: "100%",    // <- clave
+      height: "100%",   // <- clave
       symbol,
       interval,
       hide_side_toolbar: false,
@@ -97,30 +98,80 @@ const TradingViewWidget = ({
 };
 
 export default function ChartDashboard() {
-  // 1) Charts
-  const [charts, setCharts] = useState<ChartItem[]>(() => {
-    if (typeof window === "undefined") return [];
-    const saved = localStorage.getItem(CHARTS_KEY);
-    return saved ? JSON.parse(saved) : [];
-  });
+  // ———————————————
+  // 1) Cargo primero los charts guardados (o array vacío)
+  // ———————————————
+  const initialCharts: ChartItem[] =
+    typeof window !== "undefined"
+      ? JSON.parse(localStorage.getItem(CHARTS_KEY) || "[]")
+      : [];
 
-  // 2) Layout
-  const [layout, setLayout] = useState<Layout[]>(() => {
-    if (typeof window === "undefined") return [];
-    const saved = localStorage.getItem(LAYOUT_KEY);
-    return saved
-      ? JSON.parse(saved)
-      : charts.map((c, idx) => {
-          // layout inicial si no hay nada guardado
-          const perRow = Math.min(charts.length || 1, 3);
-          const w = Math.floor(12 / perRow);
-          const row = Math.floor(idx / perRow);
-          const col = idx % perRow;
-          return { i: c.id, x: col * w, y: row * 8, w, h: idx < perRow ? 12 : 8 };
-        });
-  });
+  const [charts, setCharts] = useState<ChartItem[]>(initialCharts);
 
-  // Otros estados de configuración del diálogo
+  // ———————————————
+  // 2) Layout SIEMPRE creado desde cero a partir de `charts`
+  // ———————————————
+  const buildLayout = (items: ChartItem[]): Layout[] => {
+    const perRow = Math.min(items.length || 1, 3);
+    return items.map((c, idx) => {
+      const w = Math.floor(12 / perRow);
+      const row = Math.floor(idx / perRow);
+      const col = idx % perRow;
+      return {
+        i: c.id,
+        x: col * w,
+        y: row * 8,
+        w,
+        h: idx < perRow ? 12 : 8, // 12 filas de 60px = 720px, 8 filas = 480px
+      };
+    });
+  };
+
+  const [layout, setLayout] = useState<Layout[]>(() =>
+    buildLayout(initialCharts)
+  );
+
+  // ———————————————
+  // 3) Persisto CHARTS y LAYOUT cada vez que cambian
+  // ———————————————
+  useEffect(() => {
+    localStorage.setItem(CHARTS_KEY, JSON.stringify(charts));
+    const newLayout = buildLayout(charts);
+    setLayout(newLayout);
+    localStorage.setItem(LAYOUT_KEY, JSON.stringify(newLayout));
+  }, [charts]);
+
+  // ———————————————
+  // 4) Medición del ancho para el grid
+  // ———————————————
+  const wrapperRef = useRef<HTMLDivElement>(null);
+  const [containerWidth, setContainerWidth] = useState(0);
+
+  useLayoutEffect(() => {
+    if (wrapperRef.current) {
+      setContainerWidth(wrapperRef.current.offsetWidth);
+    }
+  }, []);
+
+  useEffect(() => {
+    const onResize = () => {
+      if (wrapperRef.current) {
+        setContainerWidth(wrapperRef.current.offsetWidth);
+      }
+    };
+    window.addEventListener("resize", onResize);
+    return () => window.removeEventListener("resize", onResize);
+  }, []);
+
+  useEffect(() => {
+    if (wrapperRef.current) {
+      setContainerWidth(wrapperRef.current.offsetWidth);
+    }
+  }, [charts]);
+
+  // ———————————————
+  // 5) Resto de estados y handlers (igual que antes)
+  // ———————————————
   const [newSymbol, setNewSymbol] = useState("");
   const [newInterval, setNewInterval] = useState("D");
   const [newTheme, setNewTheme] = useState<"light" | "dark">("dark");
@@ -132,33 +183,6 @@ export default function ChartDashboard() {
   });
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
 
-  // Guarda charts
-  useEffect(() => {
-    if (typeof window === "undefined") return;
-    localStorage.setItem(CHARTS_KEY, JSON.stringify(charts));
-
-    // Al cambiar charts, asegúrate de reflejar en layout:
-    setLayout((prev) => {
-      return charts.map((c, idx) => {
-        const existing = prev.find((l) => l.i === c.id);
-        if (existing) return existing;
-        // si es chart nuevo, posición por defecto
-        const perRow = Math.min(charts.length, 3);
-        const w = Math.floor(12 / perRow);
-        const row = Math.floor(idx / perRow);
-        const col = idx % perRow;
-        return { i: c.id, x: col * w, y: row * 8, w, h: idx < perRow ? 12 : 8 };
-      });
-    });
-  }, [charts]);
-
-  // Guarda layout cuando cambie (drag/resize)
-  const onLayoutChange = (newLayout: Layout[]) => {
-    setLayout(newLayout);
-    localStorage.setItem(LAYOUT_KEY, JSON.stringify(newLayout));
-  };
-
-  // Añadir gráfico
   const addChart = () => {
     if (!newSymbol) return;
     const id = `chart-${Date.now()}`;
@@ -167,7 +191,6 @@ export default function ChartDashboard() {
       ...prev,
       { id, symbol: newSymbol, interval: newInterval, theme: newTheme, indicators },
     ]);
-    // reset formulario
     setNewSymbol("");
     setNewInterval("D");
     setNewTheme("dark");
@@ -175,13 +198,10 @@ export default function ChartDashboard() {
     setIsAddDialogOpen(false);
   };
 
-  // Quitar gráfico
   const removeChart = (id: string) => {
     setCharts((prev) => prev.filter((c) => c.id !== id));
-    // layout asociado también desaparece porque en el useEffect de charts lo filtramos
   };
 
-  // Toggle indicadores
   const toggleIndicator = (cat: string, ind: string) => {
     setIndicatorTabs((prev) => {
       const list = prev[cat];
@@ -192,9 +212,15 @@ export default function ChartDashboard() {
     });
   };
 
+  // ———————————————
+  // 6) Render
+  // ———————————————
   return (
-    <div className="min-h-screen bg-gradient-to-br from-teal-950 via-blue-950 to-teal-950 p-4 text-white">
-      {/* Botón + Diálogo */}
+    <div
+      ref={wrapperRef}
+      className="w-full min-h-screen bg-gradient-to-br from-teal-950 via-blue-950 to-teal-950 p-4 text-white"
+    >
+      {/* ——— Añadir gráfico ——— */}
       <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
         <DialogTrigger asChild>
           <Button className="bg-gradient-to-r from-teal-500 to-blue-500 mb-4">
@@ -209,7 +235,7 @@ export default function ChartDashboard() {
             <DialogTitle>Añadir Nuevo Gráfico</DialogTitle>
           </DialogHeader>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 py-4">
-            {/* Configuración básica */}
+            {/* Símbolo / Intervalo / Tema */}
             <div className="space-y-4">
               <Label>Símbolo</Label>
               <Input
@@ -242,8 +268,7 @@ export default function ChartDashboard() {
                 </SelectContent>
               </Select>
             </div>
-
-            {/* Selección de indicadores */}
+            {/* Indicadores */}
             <div className="space-y-2 overflow-hidden">
               <Label>Indicadores</Label>
               <Tabs defaultValue="tendencia">
@@ -301,7 +326,6 @@ export default function ChartDashboard() {
               </Tabs>
             </div>
           </div>
-
           <Button
             className="w-full bg-gradient-to-r from-blue-500 to-cyan-500 mt-4"
             onClick={addChart}
@@ -311,16 +335,19 @@ export default function ChartDashboard() {
         </DialogContent>
       </Dialog>
 
-      {/* Grid con persistencia de layout */}
+      {/* ——— Grid de charts ——— */}
       <ResponsiveGridLayout
         layout={layout}
         cols={12}
-        rowHeight={40}
-        width={1200}
+        rowHeight={60}
+        width={containerWidth}
         compactType="vertical"
         preventCollision={false}
         resizeHandles={["se", "sw"]}
-        onLayoutChange={onLayoutChange}
+        onLayoutChange={(l) => {
+          setLayout(l);
+          localStorage.setItem(LAYOUT_KEY, JSON.stringify(l));
+        }}
       >
         {charts.map((chart) => (
           <div
