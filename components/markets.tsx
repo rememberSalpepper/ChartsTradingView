@@ -10,7 +10,7 @@ export interface MarketsProps {
   onSelectSymbol: (symbol: string) => void;
 }
 
-type TabType = "spx" | "nasdaq" | "crypto" | "forex";
+type TabType = "spx"  | "crypto" | "forex";
 
 export default function Markets({ onSelectSymbol }: MarketsProps) {
   const [activeTab, setActiveTab] = useState<TabType>("spx");
@@ -47,10 +47,6 @@ export default function Markets({ onSelectSymbol }: MarketsProps) {
           width: "100%",
           height: "100%",
         };
-        break;
-      case "nasdaq":
-        widgetSrc = "https://s3.tradingview.com/external-embedding/embed-widget-stock-heatmap.js";
-        config = { ...config, dataSource: "NASDAQ100" };
         break;
       case "crypto":
         widgetSrc = "https://s3.tradingview.com/external-embedding/embed-widget-crypto-coins-heatmap.js";
@@ -111,7 +107,6 @@ export default function Markets({ onSelectSymbol }: MarketsProps) {
       >
         <TabsList className="bg-teal-900/30 border border-teal-800/30 mb-4">
           <TabsTrigger value="spx">S&P 500</TabsTrigger>
-          <TabsTrigger value="nasdaq">NASDAQ</TabsTrigger>
           <TabsTrigger value="crypto">Cripto</TabsTrigger>
           <TabsTrigger value="forex">Forex</TabsTrigger>
         </TabsList>

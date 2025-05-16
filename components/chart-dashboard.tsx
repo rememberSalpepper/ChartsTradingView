@@ -71,9 +71,11 @@ const TradingViewWidget = ({
     script.async = true;
     script.type = "text/javascript";
 
+    // Traducimos los indicadores a sus IDs en TV
     const studies = indicators.map((i) => indicatorMap[i]).filter(Boolean);
-    script.innerHTML = JSON.stringify({
-      autosize: true,
+
+    // IMPORTANTE: quitamos `autosize`; el widget usará width/height
+    const config = {
       width: "100%",
       height: "100%",
       symbol,
@@ -86,7 +88,9 @@ const TradingViewWidget = ({
       allow_symbol_change: true,
       studies,
       support_host: "https://www.tradingview.com",
-    });
+    };
+
+    script.innerHTML = JSON.stringify(config);
 
     if (container.current) {
       container.current.innerHTML = "";
@@ -195,6 +199,7 @@ export default function ChartDashboard() {
       ...prev,
       { id, symbol: newSymbol, interval: newInterval, theme: newTheme, indicators },
     ]);
+    // Reseteamos el modal
     setNewSymbol("");
     setNewInterval("D");
     setNewTheme("dark");
@@ -221,12 +226,9 @@ export default function ChartDashboard() {
       ref={wrapperRef}
       className="w-full min-h-screen bg-gradient-to-br from-teal-950 via-blue-950 to-teal-950 p-4 text-white"
     >
-      {/* Manager de notificaciones */}
       <AlertManager onAlertFired={removeAlert} />
 
-      {/* Controles: Añadir gráfico & Alertas */}
       <div className="flex mb-4 space-x-2">
-        {/* Añadir Gráfico */}
         <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
           <DialogTrigger asChild>
             <Button className="bg-gradient-to-r from-teal-500 to-blue-500">
@@ -341,7 +343,6 @@ export default function ChartDashboard() {
           </DialogContent>
         </Dialog>
 
-        {/* Gestión de Alertas */}
         <Dialog open={alertsOpen} onOpenChange={setAlertsOpen}>
           <DialogTrigger asChild>
             <Button variant="outline">
@@ -349,9 +350,7 @@ export default function ChartDashboard() {
             </Button>
           </DialogTrigger>
           <DialogContent className="max-w-md">
-            <DialogHeader>
-              <DialogTitle>Gestión de Alertas <br />(Solo Binance)</DialogTitle>
-            </DialogHeader>
+            <DialogHeader> <DialogTitle>Gestión de Alertas</DialogTitle> </DialogHeader>
             <div className="space-y-4">
               <div className="flex space-x-2">
                 <Input
@@ -408,7 +407,6 @@ export default function ChartDashboard() {
         </Dialog>
       </div>
 
-      {/* ── Grid de Charts ─────────────────────────────────────────────────── */}
       <ResponsiveGridLayout
         layout={layout}
         cols={12}
